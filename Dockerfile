@@ -5,23 +5,12 @@ WORKDIR /app
 COPY package.json pnpm-lock.yaml pnpm-workspace.yaml .npmrc tsconfig.base.json tsconfig.json ./
 COPY lib ./lib
 COPY artifacts/api-server ./artifacts/api-server
-COPY api-server ./api-server 2>/dev/null || true
 
-# Remove node_modules if any (shouldn't exist, but just in case)
+# Remove node_modules if any
 RUN rm -rf artifacts/api-server/node_modules lib/*/node_modules 2>/dev/null; exit 0
 
-# Convert pnpm workspace to flat npm project
-# Replace catalog: references and workspace:* deps
-RUN node -e "
-const fs=require('fs');
-const p=JSON.parse(fs.readFileSync('artifacts/api-server/package.json','utf8'));
-delete p.dependencies['@types/bcryptjs'];
-delete p.dependencies['@types/jsonwebtoken'];
-const fix=(d)=>{if(!d)return;for(const[k,v]of Object.entries(d)){if(v==='catalog:'||v==='catalog:default')d[k]='*';if(v==='workspace:*')d[k]='*'}};
-fix(p.dependencies);
-fix(p.devDependencies);
-fs.writeFileSync('artifacts/api-server/package.json',JSON.stringify(p,null,2));
-"
+# Fix package.json: remove workspace deps, replace catalog: / workspace:* with *
+RUN node -e "const fs=require('fs');const p=JSON.parse(fs.readFileSync('artifacts/api-server/package.json','utf8'));delete p.dependencies['@types/bcryptjs'];delete p.dependencies['@types/jsonwebtoken'];const fix=d=>{if(!d)return;for(const[k,v]of Object.entries(d)){if(v==='catalog:'||v==='catalog:default'||v==='workspace:*')d[k]='*'}};fix(p.dependencies);fix(p.devDependencies);fs.writeFileSync('artifacts/api-server/package.json',JSON.stringify(p,null,2))"
 
 # Install dependencies
 RUN cd artifacts/api-server && npm install --legacy-peer-deps
