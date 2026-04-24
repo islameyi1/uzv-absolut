@@ -1,16 +1,14 @@
 ﻿FROM node:20-alpine AS builder
 WORKDIR /app
 
+# Update npm to latest (supports catalog: protocol)
+RUN npm install -g npm@latest
+
 # Copy api-server only
 COPY artifacts/api-server ./api-server
-
-# Remove existing node_modules
 RUN rm -rf api-server/node_modules 2>/dev/null; exit 0
 
-# Fix catalog: references
-RUN find . -name 'package.json' -not -path '*/node_modules/*' -exec node -e "d=JSON.parse(require('fs').readFileSync(process.argv[1],'utf8'));s=x=>{if(x)for(const[k,v]of Object.entries(x)){if(v==='catalog:'||v==='catalog:default')x[k]='*'}};s(d.dependencies);s(d.devDependencies);require('fs').writeFileSync(process.argv[1],JSON.stringify(d,null,2))" {} \;
-
-# Install deps
+# Install deps (fresh npm supports catalog:)
 RUN cd api-server && npm install --legacy-peer-deps
 
 # Copy lib source files for esbuild resolution
