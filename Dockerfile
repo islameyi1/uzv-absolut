@@ -1,29 +1,29 @@
 ﻿FROM node:20-alpine AS builder
 WORKDIR /app
 
-# Copy all source files
-COPY package.json pnpm-lock.yaml pnpm-workspace.yaml .npmrc tsconfig.base.json tsconfig.json ./
+# Copy entire project structure
+COPY package.json ./
 COPY lib ./lib
-COPY artifacts/api-server ./artifacts/api-server
+COPY artifacts ./artifacts
 
-# Remove node_modules if any
-RUN rm -rf artifacts/api-server/node_modules lib/*/node_modules 2>/dev/null; exit 0
+# Remove any node_modules that came with
+RUN rm -rf lib/*/node_modules artifacts/*/node_modules 2>/dev/null; exit 0
 
-# Fix package.json: remove workspace deps, replace catalog: / workspace:* with *
-RUN node -e "const fs=require('fs');const p=JSON.parse(fs.readFileSync('artifacts/api-server/package.json','utf8'));delete p.dependencies['@types/bcryptjs'];delete p.dependencies['@types/jsonwebtoken'];const fix=d=>{if(!d)return;for(const[k,v]of Object.entries(d)){if(v==='catalog:'||v==='catalog:default'||v==='workspace:*')d[k]='*'}};fix(p.dependencies);fix(p.devDependencies);fs.writeFileSync('artifacts/api-server/package.json',JSON.stringify(p,null,2))"
+# Fix catalog: references in all package.json files
+RUN find . -name 'package.json' -not -path '*/node_modules/*' -exec node -e "const fs=require('fs');const p=JSON.parse(fs.readFileSync(process.argv[1],'utf8'));const fix=d=>{if(!d)return;for(const[k,v]of Object.entries(d)){if(v==='catalog:'||v==='catalog:default')d[k]='*'}};fix(p.dependencies);fix(p.devDependencies);fs.writeFileSync(process.argv[1],JSON.stringify(p,null,2))" {} \;
 
-# Install dependencies
-RUN cd artifacts/api-server && npm install --legacy-peer-deps
+# Install all workspaces from root
+RUN npm install --legacy-peer-deps
 
-# Build
-RUN cd artifacts/api-server && node build.mjs
+# Build api-server
+RUN npm run build:api
 
 FROM node:20-alpine AS runner
 WORKDIR /app
 
-# Copy built files
+# Copy built artifacts
 COPY --from=builder /app/artifacts/api-server/dist ./dist
-COPY --from=builder /app/artifacts/api-server/node_modules ./node_modules
+COPY --from=builder /app/node_modules ./node_modules
 
 # Copy frontend
 COPY index.html ./public/

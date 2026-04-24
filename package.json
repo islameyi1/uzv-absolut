@@ -1,20 +1,17 @@
-{
-  "name": "workspace",
+﻿{
+  "name": "uzv-monorepo",
   "version": "0.0.0",
-  "license": "MIT",
-  "scripts": {
-    "build": "pnpm run typecheck && pnpm -r --if-present run build",
-    "typecheck:libs": "tsc --build",
-    "typecheck": "pnpm run typecheck:libs && pnpm -r --filter \"./artifacts/**\" --filter \"./scripts\" --if-present run typecheck"
-  },
   "private": true,
-  "devDependencies": {
-    "prettier": "^3.8.1",
-    "typescript": "~5.9.2"
+  "workspaces": [
+    "lib/db",
+    "lib/api-zod",
+    "artifacts/api-server"
+  ],
+  "scripts": {
+    "build:api": "cd artifacts/api-server && node build.mjs",
+    "start": "cd artifacts/api-server && node --enable-source-maps dist/index.mjs"
   },
-  "optionalDependencies": {
-    "@esbuild/win32-x64": "^0.28.0",
-    "@rollup/rollup-win32-x64-msvc": "^4.60.2",
-    "@tailwindcss/oxide-win32-x64-msvc": "^4.2.4"
+  "devDependencies": {
+    "typescript": "~5.9.2"
   }
 }
