@@ -1,29 +1,32 @@
 ﻿FROM node:20-alpine AS builder
 WORKDIR /app
 
-# Copy everything (works if root dir is / or /api-server)
-COPY package.json ./
-COPY lib ./lib
-COPY artifacts ./artifacts
+# Copy api-server only
+COPY artifacts/api-server ./api-server
 
-# Remove node_modules
-RUN rm -rf lib/*/node_modules artifacts/*/node_modules 2>/dev/null; exit 0
+# Remove existing node_modules
+RUN rm -rf api-server/node_modules 2>/dev/null; exit 0
 
 # Fix catalog: references
 RUN find . -name 'package.json' -not -path '*/node_modules/*' -exec node -e "d=JSON.parse(require('fs').readFileSync(process.argv[1],'utf8'));s=x=>{if(x)for(const[k,v]of Object.entries(x)){if(v==='catalog:'||v==='catalog:default')x[k]='*'}};s(d.dependencies);s(d.devDependencies);require('fs').writeFileSync(process.argv[1],JSON.stringify(d,null,2))" {} \;
 
-# Install from root (npm workspaces)
-RUN npm install --legacy-peer-deps
+# Install deps
+RUN cd api-server && npm install --legacy-peer-deps
 
-# Build api-server
-RUN cd artifacts/api-server && node build.mjs
+# Copy lib source files for esbuild resolution
+COPY lib ./lib
+
+# Build
+RUN cd api-server && node build.mjs
 
 FROM node:20-alpine AS runner
 WORKDIR /app
 
-COPY --from=builder /app/artifacts/api-server/dist ./dist
-COPY --from=builder /app/node_modules ./node_modules
+# Copy built files
+COPY --from=builder /app/api-server/dist ./dist
+COPY --from=builder /app/api-server/node_modules ./node_modules
 
+# Copy frontend
 COPY index.html ./public/
 COPY assets ./public/assets/
 COPY favicon.svg ./public/
