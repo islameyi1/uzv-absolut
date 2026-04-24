@@ -1,0 +1,5 @@
+node_modules/
+.packages/*/node_modules/
+api-server/node_modules/
+api-server/dist/
+*.tsbuildinfo

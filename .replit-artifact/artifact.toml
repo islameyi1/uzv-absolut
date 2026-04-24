@@ -1,0 +1,31 @@
+kind = "web"
+previewPath = "/"
+title = "UZV Aquafarm Manager"
+version = "1.0.0"
+id = "artifacts/uzv-farm"
+router = "path"
+
+[[integratedSkills]]
+name = "react-vite"
+version = "1.0.0"
+
+[[services]]
+name = "web"
+paths = [ "/" ]
+localPort = 19035
+
+[services.development]
+run = "pnpm --filter @workspace/uzv-farm run dev"
+
+[services.production]
+build = [ "pnpm", "--filter", "@workspace/uzv-farm", "run", "build" ]
+publicDir = "artifacts/uzv-farm/dist/public"
+serve = "static"
+
+[[services.production.rewrites]]
+from = "/*"
+to = "/index.html"
+
+[services.env]
+PORT = "19035"
+BASE_PATH = "/"
