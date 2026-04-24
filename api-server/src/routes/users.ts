@@ -1,5 +1,5 @@
 import { Router } from "express";
-import { db, usersTable, farmsTable } from "@workspace/db";
+import { db, usersTable, farmsTable } from "./db";
 import { eq } from "drizzle-orm";
 import { requireOwner } from "../middlewares/auth";
 

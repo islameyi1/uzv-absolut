@@ -1,8 +1,8 @@
 import { Router } from "express";
-import { db, poolsTable } from "@workspace/db";
+import { db, poolsTable } from "./db";
 import { eq, and } from "drizzle-orm";
 import { requireAuth } from "../middlewares/auth";
-import { CreatePoolBody, GetPoolsQueryParams } from "@workspace/api-zod";
+import { CreatePoolBody, GetPoolsQueryParams } from "./api-zod";
 
 const router: Router = Router();
 

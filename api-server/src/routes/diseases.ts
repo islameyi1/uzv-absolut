@@ -1,8 +1,8 @@
 import { Router } from "express";
-import { db, diseasesTable } from "@workspace/db";
+import { db, diseasesTable } from "./db";
 import { eq, like, or, ilike } from "drizzle-orm";
 import { requireAuth } from "../middlewares/auth";
-import { CreateDiseaseBody, GetDiseasesQueryParams } from "@workspace/api-zod";
+import { CreateDiseaseBody, GetDiseasesQueryParams } from "./api-zod";
 
 const router: Router = Router();
 

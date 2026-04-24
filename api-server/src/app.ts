@@ -7,7 +7,7 @@ import router from "./routes";
 import { logger } from "./lib/logger";
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
-const publicPath = path.resolve(__dirname, "..", "..", "..", "public");
+const publicPath = path.resolve(__dirname, "..", "public");
 
 const app: Express = express();
 
@@ -36,7 +36,7 @@ app.use(express.urlencoded({ extended: true }));
 
 app.use("/api", router);
 
-// Serve static frontend files from /app/public
+// Serve static frontend files
 app.use(express.static(publicPath, {
   maxAge: "1y",
   immutable: true,

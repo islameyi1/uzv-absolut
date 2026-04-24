@@ -1,54 +1,42 @@
-FROM node:20-alpine AS base
+FROM node:20-alpine
 
 WORKDIR /app
 
-# Install pnpm
-RUN corepack enable && corepack prepare pnpm@9 --activate
+# Copy everything
+COPY . .
 
-# ---- Build dependencies ----
-FROM base AS deps
-COPY .packages/db/package.json ./packages/db/package.json
-COPY .packages/api-zod/package.json ./packages/api-zod/package.json
-COPY api-server/package.json ./api-server/package.json
-COPY pnpm-workspace.yaml ./
+# Remove git history and unnecessary files
+RUN rm -rf .git api-server/lib api-server/node_modules pnpm-lock.yaml pnpm-workspace.yaml 2>/dev/null; exit 0
 
-# Copy source files
-COPY .packages/db/src ./packages/db/src
-COPY .packages/api-zod/src ./packages/api-zod/src
-COPY api-server/src ./api-server/src
+# Create package.json for the root
+RUN node -e "
+const fs = require('fs');
+const pkg = JSON.parse(fs.readFileSync('api-server/package.json', 'utf8'));
+// Remove workspace dependencies
+delete pkg.dependencies['@workspace/db'];
+delete pkg.dependencies['@workspace/api-zod'];
+delete pkg.dependencies['@types/bcryptjs'];
+delete pkg.dependencies['@types/jsonwebtoken'];
+fs.writeFileSync('package.json', JSON.stringify({
+  name: 'uzv-api',
+  version: '1.0.0',
+  private: true,
+  type: 'module',
+  scripts: {
+    build: 'node build.mjs',
+    start: 'node --enable-source-maps dist/index.mjs'
+  },
+  dependencies: pkg.dependencies,
+  devDependencies: pkg.devDependencies
+}, null, 2));
+"
 
 # Install dependencies
-RUN pnpm install --no-frozen-lockfile
+RUN npm install
 
-# ---- Build the API server ----
-FROM deps AS builder
-RUN cd api-server && pnpm build
-
-# ---- Production image ----
-FROM base AS runner
-ENV NODE_ENV=production
-
-# Copy node_modules (pnpm store) from deps
-COPY --from=deps /app/node_modules ./node_modules
-COPY --from=deps /app/packages ./packages
-COPY --from=deps /app/api-server ./api-server
-COPY --from=deps /app/package.json ./package.json
-
-# Copy built dist
-COPY --from=builder /app/api-server/dist ./api-server/dist
-COPY --from=builder /app/.packages/db/dist ./packages/db/dist
-
-# Copy frontend static files
-COPY index.html ./public/
-COPY assets ./public/assets/
-COPY favicon.svg ./public/
-COPY .nojekyll ./public/
-
-# Symlink workspace packages
-RUN mkdir -p /app/node_modules/@workspace && \
-    ln -s /app/packages/db /app/node_modules/@workspace/db && \
-    ln -s /app/packages/api-zod /app/node_modules/@workspace/api-zod
+# Build the bundled API server
+RUN node build.mjs
 
 EXPOSE 3000
 
-CMD ["node", "--enable-source-maps", "api-server/dist/index.mjs"]
+CMD ["node", "--enable-source-maps", "dist/index.mjs"]

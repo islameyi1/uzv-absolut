@@ -1,10 +1,10 @@
 import { Router } from "express";
 import { requireAuth } from "../middlewares/auth";
-import { db } from "@workspace/db";
+import { db } from "./db";
 import {
   feedTypesTable, feedingStrategiesTable, feedStockTable, feedingLogsTable,
   poolsTable, usersTable,
-} from "@workspace/db";
+} from "./db";
 import { eq, desc, and, gte, lte, sql } from "drizzle-orm";
 
 const router: Router = Router();

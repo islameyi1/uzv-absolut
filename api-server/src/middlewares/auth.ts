@@ -1,6 +1,6 @@
 import { Request, Response, NextFunction } from "express";
 import { verifyToken } from "../lib/auth";
-import { db, usersTable } from "@workspace/db";
+import { db, usersTable } from "./db";
 import { eq } from "drizzle-orm";
 
 declare global {

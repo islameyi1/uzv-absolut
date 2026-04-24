@@ -1,5 +1,5 @@
 import { Router } from "express";
-import { db, usersTable, farmsTable } from "@workspace/db";
+import { db, usersTable, farmsTable } from "./db";
 import { eq } from "drizzle-orm";
 import { hashPassword, verifyPassword, signToken } from "../lib/auth";
 import { requireAuth, requireOwner } from "../middlewares/auth";
@@ -7,7 +7,7 @@ import {
   RegisterBody,
   LoginBody,
   InviteWorkerBody,
-} from "@workspace/api-zod";
+} from "./api-zod";
 
 const router: Router = Router();
 
