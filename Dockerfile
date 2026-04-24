@@ -1,31 +1,29 @@
 ﻿FROM node:20-alpine AS builder
 WORKDIR /app
 
-# Copy entire project structure
+# Copy everything (works if root dir is / or /api-server)
 COPY package.json ./
 COPY lib ./lib
 COPY artifacts ./artifacts
 
-# Remove any node_modules that came with
+# Remove node_modules
 RUN rm -rf lib/*/node_modules artifacts/*/node_modules 2>/dev/null; exit 0
 
-# Fix catalog: references in all package.json files
-RUN find . -name 'package.json' -not -path '*/node_modules/*' -exec node -e "const fs=require('fs');const p=JSON.parse(fs.readFileSync(process.argv[1],'utf8'));const fix=d=>{if(!d)return;for(const[k,v]of Object.entries(d)){if(v==='catalog:'||v==='catalog:default')d[k]='*'}};fix(p.dependencies);fix(p.devDependencies);fs.writeFileSync(process.argv[1],JSON.stringify(p,null,2))" {} \;
+# Fix catalog: references
+RUN find . -name 'package.json' -not -path '*/node_modules/*' -exec node -e "d=JSON.parse(require('fs').readFileSync(process.argv[1],'utf8'));s=x=>{if(x)for(const[k,v]of Object.entries(x)){if(v==='catalog:'||v==='catalog:default')x[k]='*'}};s(d.dependencies);s(d.devDependencies);require('fs').writeFileSync(process.argv[1],JSON.stringify(d,null,2))" {} \;
 
-# Install all workspaces from root
+# Install from root (npm workspaces)
 RUN npm install --legacy-peer-deps
 
 # Build api-server
-RUN npm run build:api
+RUN cd artifacts/api-server && node build.mjs
 
 FROM node:20-alpine AS runner
 WORKDIR /app
 
-# Copy built artifacts
 COPY --from=builder /app/artifacts/api-server/dist ./dist
 COPY --from=builder /app/node_modules ./node_modules
 
-# Copy frontend
 COPY index.html ./public/
 COPY assets ./public/assets/
 COPY favicon.svg ./public/
