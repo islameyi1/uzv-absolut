@@ -1,8 +1,8 @@
 import { Router } from "express";
-import { db, measurementsTable, poolsTable } from "./db";
+import { db, measurementsTable, poolsTable } from "@workspace/db";
 import { eq } from "drizzle-orm";
 import { requireAuth } from "../middlewares/auth";
-import { ExportMeasurementsCsvQueryParams } from "./api-zod";
+import { ExportMeasurementsCsvQueryParams } from "@workspace/api-zod";
 
 const router: Router = Router();
 

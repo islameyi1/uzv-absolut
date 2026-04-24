@@ -1,8 +1,8 @@
 import { Router } from "express";
-import { db, farmsTable, usersTable } from "./db";
+import { db, farmsTable, usersTable } from "@workspace/db";
 import { eq } from "drizzle-orm";
 import { requireAuth } from "../middlewares/auth";
-import { CreateFarmBody, GetFarmParams, UpdateFarmParams, DeleteFarmParams } from "./api-zod";
+import { CreateFarmBody, GetFarmParams, UpdateFarmParams, DeleteFarmParams } from "@workspace/api-zod";
 
 const router: Router = Router();
 

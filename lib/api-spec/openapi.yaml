@@ -1,0 +1,1423 @@
+openapi: 3.1.0
+info:
+  # Do not change the title, if the title changes, the import paths will be broken
+  title: Api
+  version: 0.1.0
+  description: UZV Aquafarm Management API
+servers:
+  - url: /api
+    description: Base API path
+tags:
+  - name: health
+    description: Health operations
+  - name: auth
+    description: Authentication
+  - name: farms
+    description: Farm management
+  - name: pools
+    description: Pool management
+  - name: measurements
+    description: Water measurements
+  - name: tasks
+    description: Task management
+  - name: diseases
+    description: Disease reference
+  - name: calculators
+    description: UZV calculators
+  - name: reports
+    description: Reports and exports
+  - name: users
+    description: User management
+
+paths:
+  /healthz:
+    get:
+      operationId: healthCheck
+      tags: [health]
+      summary: Health check
+      responses:
+        "200":
+          description: Healthy
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/HealthStatus"
+
+  # AUTH
+  /auth/register:
+    post:
+      operationId: register
+      tags: [auth]
+      summary: Register a new user
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/RegisterBody"
+      responses:
+        "201":
+          description: User created
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AuthResponse"
+        "400":
+          description: Bad request
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+
+  /auth/login:
+    post:
+      operationId: login
+      tags: [auth]
+      summary: Login
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/LoginBody"
+      responses:
+        "200":
+          description: Logged in
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AuthResponse"
+        "401":
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+
+  /auth/logout:
+    post:
+      operationId: logout
+      tags: [auth]
+      summary: Logout
+      responses:
+        "200":
+          description: Logged out
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/SuccessResponse"
+
+  /auth/me:
+    get:
+      operationId: getMe
+      tags: [auth]
+      summary: Get current user
+      responses:
+        "200":
+          description: Current user
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/User"
+        "401":
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+
+  /auth/invite:
+    post:
+      operationId: inviteWorker
+      tags: [auth]
+      summary: Invite a worker (owner only)
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/InviteWorkerBody"
+      responses:
+        "201":
+          description: Worker invited
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/User"
+        "400":
+          description: Bad request
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+
+  # USERS
+  /users/workers:
+    get:
+      operationId: getWorkers
+      tags: [users]
+      summary: Get list of workers (owner only)
+      responses:
+        "200":
+          description: Workers list
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/User"
+
+  # FARMS
+  /farms:
+    get:
+      operationId: getFarms
+      tags: [farms]
+      summary: Get farms for current user
+      responses:
+        "200":
+          description: List of farms
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/Farm"
+    post:
+      operationId: createFarm
+      tags: [farms]
+      summary: Create a farm
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/CreateFarmBody"
+      responses:
+        "201":
+          description: Farm created
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Farm"
+
+  /farms/{id}:
+    get:
+      operationId: getFarm
+      tags: [farms]
+      summary: Get a farm by ID
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        "200":
+          description: Farm
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Farm"
+        "404":
+          description: Not found
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+    put:
+      operationId: updateFarm
+      tags: [farms]
+      summary: Update a farm
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/CreateFarmBody"
+      responses:
+        "200":
+          description: Farm updated
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Farm"
+    delete:
+      operationId: deleteFarm
+      tags: [farms]
+      summary: Delete a farm
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        "204":
+          description: Deleted
+
+  # POOLS
+  /pools:
+    get:
+      operationId: getPools
+      tags: [pools]
+      summary: Get pools
+      parameters:
+        - name: farmId
+          in: query
+          required: false
+          schema:
+            type: integer
+      responses:
+        "200":
+          description: List of pools
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/Pool"
+    post:
+      operationId: createPool
+      tags: [pools]
+      summary: Create a pool
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/CreatePoolBody"
+      responses:
+        "201":
+          description: Pool created
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Pool"
+
+  /pools/{id}:
+    get:
+      operationId: getPool
+      tags: [pools]
+      summary: Get a pool by ID
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        "200":
+          description: Pool
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Pool"
+        "404":
+          description: Not found
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+    put:
+      operationId: updatePool
+      tags: [pools]
+      summary: Update a pool
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/CreatePoolBody"
+      responses:
+        "200":
+          description: Pool updated
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Pool"
+    delete:
+      operationId: deletePool
+      tags: [pools]
+      summary: Delete a pool
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        "204":
+          description: Deleted
+
+  # MEASUREMENTS
+  /measurements:
+    get:
+      operationId: getMeasurements
+      tags: [measurements]
+      summary: Get measurements
+      parameters:
+        - name: poolId
+          in: query
+          required: false
+          schema:
+            type: integer
+        - name: from
+          in: query
+          required: false
+          schema:
+            type: string
+        - name: to
+          in: query
+          required: false
+          schema:
+            type: string
+      responses:
+        "200":
+          description: List of measurements
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/Measurement"
+    post:
+      operationId: createMeasurement
+      tags: [measurements]
+      summary: Add a measurement
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/CreateMeasurementBody"
+      responses:
+        "201":
+          description: Measurement created
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Measurement"
+
+  /measurements/{poolId}/chart:
+    get:
+      operationId: getMeasurementsChart
+      tags: [measurements]
+      summary: Get chart data for a pool
+      parameters:
+        - name: poolId
+          in: path
+          required: true
+          schema:
+            type: integer
+        - name: period
+          in: query
+          required: false
+          schema:
+            type: string
+            enum: [days, weeks, months]
+      responses:
+        "200":
+          description: Chart data
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/ChartDataPoint"
+
+  /measurements/latest:
+    get:
+      operationId: getLatestMeasurements
+      tags: [measurements]
+      summary: Get latest measurement per pool
+      responses:
+        "200":
+          description: Latest measurements
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/PoolWithLatestMeasurement"
+
+  # TASKS
+  /tasks:
+    get:
+      operationId: getTasks
+      tags: [tasks]
+      summary: Get tasks
+      parameters:
+        - name: status
+          in: query
+          required: false
+          schema:
+            type: string
+            enum: [todo, in-progress, done]
+        - name: poolId
+          in: query
+          required: false
+          schema:
+            type: integer
+        - name: assignedTo
+          in: query
+          required: false
+          schema:
+            type: integer
+      responses:
+        "200":
+          description: List of tasks
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/Task"
+    post:
+      operationId: createTask
+      tags: [tasks]
+      summary: Create a task
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/CreateTaskBody"
+      responses:
+        "201":
+          description: Task created
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Task"
+
+  /tasks/{id}:
+    get:
+      operationId: getTask
+      tags: [tasks]
+      summary: Get a task
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        "200":
+          description: Task
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Task"
+    patch:
+      operationId: updateTask
+      tags: [tasks]
+      summary: Update a task
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/UpdateTaskBody"
+      responses:
+        "200":
+          description: Task updated
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Task"
+    delete:
+      operationId: deleteTask
+      tags: [tasks]
+      summary: Delete a task
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        "204":
+          description: Deleted
+
+  /tasks/{id}/status:
+    patch:
+      operationId: updateTaskStatus
+      tags: [tasks]
+      summary: Update task status
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/UpdateTaskStatusBody"
+      responses:
+        "200":
+          description: Task status updated
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Task"
+
+  # DISEASES
+  /diseases:
+    get:
+      operationId: getDiseases
+      tags: [diseases]
+      summary: Get diseases
+      parameters:
+        - name: q
+          in: query
+          required: false
+          schema:
+            type: string
+      responses:
+        "200":
+          description: List of diseases
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/Disease"
+    post:
+      operationId: createDisease
+      tags: [diseases]
+      summary: Add a disease (owner only)
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/CreateDiseaseBody"
+      responses:
+        "201":
+          description: Disease created
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Disease"
+
+  /diseases/{id}:
+    get:
+      operationId: getDisease
+      tags: [diseases]
+      summary: Get a disease
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        "200":
+          description: Disease
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Disease"
+        "404":
+          description: Not found
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+
+  # CALCULATORS
+  /calculators/pool-volume:
+    post:
+      operationId: calcPoolVolume
+      tags: [calculators]
+      summary: Calculate pool volume
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/PoolVolumeInput"
+      responses:
+        "200":
+          description: Calculation result
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/CalculatorResult"
+
+  /calculators/drum-filter:
+    post:
+      operationId: calcDrumFilter
+      tags: [calculators]
+      summary: Calculate drum filter performance
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/DrumFilterInput"
+      responses:
+        "200":
+          description: Calculation result
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/CalculatorResult"
+
+  /calculators/pump:
+    post:
+      operationId: calcPump
+      tags: [calculators]
+      summary: Calculate pump power
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/PumpInput"
+      responses:
+        "200":
+          description: Calculation result
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/CalculatorResult"
+
+  /calculators/compressor:
+    post:
+      operationId: calcCompressor
+      tags: [calculators]
+      summary: Calculate compressor
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/CompressorInput"
+      responses:
+        "200":
+          description: Calculation result
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/CalculatorResult"
+
+  /calculators/oxygen:
+    post:
+      operationId: calcOxygen
+      tags: [calculators]
+      summary: Calculate oxygen concentrator
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/OxygenInput"
+      responses:
+        "200":
+          description: Calculation result
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/CalculatorResult"
+
+  /calculators/checklist:
+    get:
+      operationId: getChecklist
+      tags: [calculators]
+      summary: Get equipment checklist
+      responses:
+        "200":
+          description: Checklist items
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/ChecklistItem"
+    post:
+      operationId: saveChecklist
+      tags: [calculators]
+      summary: Save checklist progress
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: array
+              items:
+                $ref: "#/components/schemas/ChecklistItemUpdate"
+      responses:
+        "200":
+          description: Saved
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/SuccessResponse"
+
+  # REPORTS
+  /reports/measurements/csv:
+    get:
+      operationId: exportMeasurementsCsv
+      tags: [reports]
+      summary: Export measurements as CSV
+      parameters:
+        - name: poolId
+          in: query
+          required: false
+          schema:
+            type: integer
+        - name: from
+          in: query
+          required: false
+          schema:
+            type: string
+        - name: to
+          in: query
+          required: false
+          schema:
+            type: string
+      responses:
+        "200":
+          description: CSV file
+          content:
+            text/csv:
+              schema:
+                type: string
+
+  # DASHBOARD
+  /dashboard/summary:
+    get:
+      operationId: getDashboardSummary
+      tags: [farms]
+      summary: Get dashboard summary
+      responses:
+        "200":
+          description: Summary
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/DashboardSummary"
+
+components:
+  schemas:
+    HealthStatus:
+      type: object
+      properties:
+        status:
+          type: string
+      required:
+        - status
+
+    ErrorResponse:
+      type: object
+      properties:
+        error:
+          type: string
+      required:
+        - error
+
+    SuccessResponse:
+      type: object
+      properties:
+        success:
+          type: boolean
+      required:
+        - success
+
+    # AUTH
+    RegisterBody:
+      type: object
+      properties:
+        email:
+          type: string
+        name:
+          type: string
+        password:
+          type: string
+        role:
+          type: string
+          enum: [owner, worker]
+      required:
+        - email
+        - name
+        - password
+        - role
+
+    LoginBody:
+      type: object
+      properties:
+        email:
+          type: string
+        password:
+          type: string
+      required:
+        - email
+        - password
+
+    InviteWorkerBody:
+      type: object
+      properties:
+        email:
+          type: string
+        name:
+          type: string
+        password:
+          type: string
+      required:
+        - email
+        - name
+        - password
+
+    AuthResponse:
+      type: object
+      properties:
+        user:
+          $ref: "#/components/schemas/User"
+        token:
+          type: string
+      required:
+        - user
+        - token
+
+    User:
+      type: object
+      properties:
+        id:
+          type: integer
+        email:
+          type: string
+        name:
+          type: string
+        role:
+          type: string
+          enum: [owner, worker]
+        farmId:
+          type: ["integer", "null"]
+        createdAt:
+          type: string
+      required:
+        - id
+        - email
+        - name
+        - role
+        - createdAt
+
+    # FARMS
+    Farm:
+      type: object
+      properties:
+        id:
+          type: integer
+        name:
+          type: string
+        location:
+          type: ["string", "null"]
+        photo:
+          type: ["string", "null"]
+        ownerId:
+          type: integer
+        createdAt:
+          type: string
+      required:
+        - id
+        - name
+        - ownerId
+        - createdAt
+
+    CreateFarmBody:
+      type: object
+      properties:
+        name:
+          type: string
+        location:
+          type: ["string", "null"]
+        photo:
+          type: ["string", "null"]
+      required:
+        - name
+
+    # POOLS
+    Pool:
+      type: object
+      properties:
+        id:
+          type: integer
+        name:
+          type: string
+        shape:
+          type: string
+          enum: [rectangular, circular, oval]
+        length:
+          type: ["number", "null"]
+        width:
+          type: ["number", "null"]
+        diameter:
+          type: ["number", "null"]
+        depth:
+          type: number
+        volume:
+          type: number
+        farmId:
+          type: integer
+        createdAt:
+          type: string
+      required:
+        - id
+        - name
+        - shape
+        - depth
+        - volume
+        - farmId
+        - createdAt
+
+    CreatePoolBody:
+      type: object
+      properties:
+        name:
+          type: string
+        shape:
+          type: string
+          enum: [rectangular, circular, oval]
+        length:
+          type: ["number", "null"]
+        width:
+          type: ["number", "null"]
+        diameter:
+          type: ["number", "null"]
+        depth:
+          type: number
+        farmId:
+          type: integer
+      required:
+        - name
+        - shape
+        - depth
+        - farmId
+
+    # MEASUREMENTS
+    Measurement:
+      type: object
+      properties:
+        id:
+          type: integer
+        poolId:
+          type: integer
+        temperature:
+          type: number
+        ph:
+          type: number
+        oxygen:
+          type: number
+        ammonia:
+          type: number
+        nitrites:
+          type: number
+        nitrates:
+          type: number
+        date:
+          type: string
+        createdAt:
+          type: string
+      required:
+        - id
+        - poolId
+        - temperature
+        - ph
+        - oxygen
+        - ammonia
+        - nitrites
+        - nitrates
+        - date
+        - createdAt
+
+    CreateMeasurementBody:
+      type: object
+      properties:
+        poolId:
+          type: integer
+        temperature:
+          type: number
+        ph:
+          type: number
+        oxygen:
+          type: number
+        ammonia:
+          type: number
+        nitrites:
+          type: number
+        nitrates:
+          type: number
+        date:
+          type: string
+      required:
+        - poolId
+        - temperature
+        - ph
+        - oxygen
+        - ammonia
+        - nitrites
+        - nitrates
+
+    ChartDataPoint:
+      type: object
+      properties:
+        date:
+          type: string
+        temperature:
+          type: ["number", "null"]
+        ph:
+          type: ["number", "null"]
+        oxygen:
+          type: ["number", "null"]
+        ammonia:
+          type: ["number", "null"]
+        nitrites:
+          type: ["number", "null"]
+        nitrates:
+          type: ["number", "null"]
+      required:
+        - date
+
+    PoolWithLatestMeasurement:
+      type: object
+      properties:
+        pool:
+          $ref: "#/components/schemas/Pool"
+        measurement:
+          $ref: "#/components/schemas/Measurement"
+        status:
+          type: string
+          enum: [normal, warning, critical, unknown]
+      required:
+        - pool
+        - status
+
+    # TASKS
+    Task:
+      type: object
+      properties:
+        id:
+          type: integer
+        title:
+          type: string
+        description:
+          type: ["string", "null"]
+        status:
+          type: string
+          enum: [todo, in-progress, done]
+        priority:
+          type: string
+          enum: [low, medium, high]
+        dueDate:
+          type: ["string", "null"]
+        assignedTo:
+          type: ["integer", "null"]
+        poolId:
+          type: ["integer", "null"]
+        createdBy:
+          type: integer
+        photo:
+          type: ["string", "null"]
+        comment:
+          type: ["string", "null"]
+        assignedUser:
+          $ref: "#/components/schemas/User"
+        pool:
+          $ref: "#/components/schemas/Pool"
+        createdAt:
+          type: string
+      required:
+        - id
+        - title
+        - status
+        - priority
+        - createdBy
+        - createdAt
+
+    CreateTaskBody:
+      type: object
+      properties:
+        title:
+          type: string
+        description:
+          type: ["string", "null"]
+        priority:
+          type: string
+          enum: [low, medium, high]
+        dueDate:
+          type: ["string", "null"]
+        assignedTo:
+          type: ["integer", "null"]
+        poolId:
+          type: ["integer", "null"]
+      required:
+        - title
+        - priority
+
+    UpdateTaskBody:
+      type: object
+      properties:
+        title:
+          type: string
+        description:
+          type: ["string", "null"]
+        status:
+          type: string
+          enum: [todo, in-progress, done]
+        priority:
+          type: string
+          enum: [low, medium, high]
+        dueDate:
+          type: ["string", "null"]
+        assignedTo:
+          type: ["integer", "null"]
+        poolId:
+          type: ["integer", "null"]
+        photo:
+          type: ["string", "null"]
+        comment:
+          type: ["string", "null"]
+
+    UpdateTaskStatusBody:
+      type: object
+      properties:
+        status:
+          type: string
+          enum: [todo, in-progress, done]
+      required:
+        - status
+
+    # DISEASES
+    Disease:
+      type: object
+      properties:
+        id:
+          type: integer
+        name:
+          type: string
+        latinName:
+          type: ["string", "null"]
+        symptoms:
+          type: string
+        causes:
+          type: string
+        waterParameters:
+          type: ["string", "null"]
+        treatment:
+          type: string
+        prevention:
+          type: string
+        photo:
+          type: ["string", "null"]
+        createdAt:
+          type: string
+      required:
+        - id
+        - name
+        - symptoms
+        - causes
+        - treatment
+        - prevention
+        - createdAt
+
+    CreateDiseaseBody:
+      type: object
+      properties:
+        name:
+          type: string
+        latinName:
+          type: ["string", "null"]
+        symptoms:
+          type: string
+        causes:
+          type: string
+        waterParameters:
+          type: ["string", "null"]
+        treatment:
+          type: string
+        prevention:
+          type: string
+        photo:
+          type: ["string", "null"]
+      required:
+        - name
+        - symptoms
+        - causes
+        - treatment
+        - prevention
+
+    # CALCULATORS
+    PoolVolumeInput:
+      type: object
+      properties:
+        shape:
+          type: string
+          enum: [rectangular, circular, oval]
+        length:
+          type: ["number", "null"]
+        width:
+          type: ["number", "null"]
+        diameter:
+          type: ["number", "null"]
+        depth:
+          type: number
+      required:
+        - shape
+        - depth
+
+    DrumFilterInput:
+      type: object
+      properties:
+        poolVolume:
+          type: number
+        fishBiomass:
+          type: number
+        feedRate:
+          type: number
+      required:
+        - poolVolume
+        - fishBiomass
+        - feedRate
+
+    PumpInput:
+      type: object
+      properties:
+        poolVolume:
+          type: number
+        turnoverRate:
+          type: number
+        headHeight:
+          type: number
+      required:
+        - poolVolume
+        - turnoverRate
+        - headHeight
+
+    CompressorInput:
+      type: object
+      properties:
+        poolVolume:
+          type: number
+        fishBiomass:
+          type: number
+        waterTemperature:
+          type: number
+      required:
+        - poolVolume
+        - fishBiomass
+        - waterTemperature
+
+    OxygenInput:
+      type: object
+      properties:
+        poolVolume:
+          type: number
+        fishBiomass:
+          type: number
+        targetOxygen:
+          type: number
+        currentOxygen:
+          type: number
+      required:
+        - poolVolume
+        - fishBiomass
+        - targetOxygen
+        - currentOxygen
+
+    CalculatorResult:
+      type: object
+      properties:
+        result:
+          type: number
+        unit:
+          type: string
+        details:
+          type: object
+          additionalProperties: true
+        recommendations:
+          type: array
+          items:
+            type: string
+      required:
+        - result
+        - unit
+
+    ChecklistItem:
+      type: object
+      properties:
+        id:
+          type: string
+        category:
+          type: string
+        name:
+          type: string
+        description:
+          type: string
+        completed:
+          type: boolean
+        required:
+          type: boolean
+      required:
+        - id
+        - category
+        - name
+        - description
+        - completed
+        - required
+
+    ChecklistItemUpdate:
+      type: object
+      properties:
+        id:
+          type: string
+        completed:
+          type: boolean
+      required:
+        - id
+        - completed
+
+    # DASHBOARD
+    DashboardSummary:
+      type: object
+      properties:
+        totalFarms:
+          type: integer
+        totalPools:
+          type: integer
+        totalWorkers:
+          type: integer
+        pendingTasks:
+          type: integer
+        recentMeasurements:
+          type: integer
+        alertCount:
+          type: integer
+      required:
+        - totalFarms
+        - totalPools
+        - totalWorkers
+        - pendingTasks
+        - recentMeasurements
+        - alertCount

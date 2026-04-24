@@ -1,5 +1,5 @@
 import { Router } from "express";
-import { db, tasksTable, usersTable, poolsTable } from "./db";
+import { db, tasksTable, usersTable, poolsTable } from "@workspace/db";
 import { eq, and } from "drizzle-orm";
 import { requireAuth } from "../middlewares/auth";
 import {
@@ -7,7 +7,7 @@ import {
   UpdateTaskBody,
   UpdateTaskStatusBody,
   GetTasksQueryParams,
-} from "./api-zod";
+} from "@workspace/api-zod";
 
 const router: Router = Router();
 

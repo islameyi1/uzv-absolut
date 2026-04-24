@@ -1,5 +1,5 @@
 import { Router } from "express";
-import { db, measurementsTable, poolsTable } from "./db";
+import { db, measurementsTable, poolsTable } from "@workspace/db";
 import { eq, and, gte, lte } from "drizzle-orm";
 import { requireAuth } from "../middlewares/auth";
 import {
@@ -7,7 +7,7 @@ import {
   GetMeasurementsQueryParams,
   GetMeasurementsChartParams,
   GetMeasurementsChartQueryParams,
-} from "./api-zod";
+} from "@workspace/api-zod";
 
 const router: Router = Router();
 

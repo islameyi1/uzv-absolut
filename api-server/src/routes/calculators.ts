@@ -7,7 +7,7 @@ import {
   CalcCompressorBody,
   CalcOxygenBody,
   SaveChecklistBody,
-} from "./api-zod";
+} from "@workspace/api-zod";
 
 const router: Router = Router();
 
