@@ -1,41 +1,35 @@
-FROM node:20-alpine
+# Builder stage
+FROM node:20-alpine AS builder
 
 WORKDIR /app
 
-# Copy everything
-COPY . .
+# Copy source code
+COPY api-server/ ./api-server/
 
-# Remove git history and unnecessary files
-RUN rm -rf .git api-server/lib api-server/node_modules pnpm-lock.yaml pnpm-workspace.yaml 2>/dev/null; exit 0
-
-# Create package.json for the root
-RUN node -e "
-const fs = require('fs');
-const pkg = JSON.parse(fs.readFileSync('api-server/package.json', 'utf8'));
-// Remove workspace dependencies
-delete pkg.dependencies['@workspace/db'];
-delete pkg.dependencies['@workspace/api-zod'];
-delete pkg.dependencies['@types/bcryptjs'];
-delete pkg.dependencies['@types/jsonwebtoken'];
-fs.writeFileSync('package.json', JSON.stringify({
-  name: 'uzv-api',
-  version: '1.0.0',
-  private: true,
-  type: 'module',
-  scripts: {
-    build: 'node build.mjs',
-    start: 'node --enable-source-maps dist/index.mjs'
-  },
-  dependencies: pkg.dependencies,
-  devDependencies: pkg.devDependencies
-}, null, 2));
-"
+# Create root package.json using the api-server package.json
+# (removing workspace-specific dependencies)
+RUN node -e "const fs=require('fs');const p=JSON.parse(fs.readFileSync('api-server/package.json','utf8'));delete p.dependencies['@workspace/db'];delete p.dependencies['@workspace/api-zod'];delete p.dependencies['@types/bcryptjs'];delete p.dependencies['@types/jsonwebtoken'];fs.writeFileSync('package.json',JSON.stringify({name:'uzv-api',version:'1.0.0',private:true,type:'module',scripts:{build:'node build.mjs',start:'node --enable-source-maps dist/index.mjs'},dependencies:p.dependencies,devDependencies:p.devDependencies},null,2))"
 
 # Install dependencies
 RUN npm install
 
 # Build the bundled API server
 RUN node build.mjs
+
+# ---- Production stage ----
+FROM node:20-alpine AS runner
+
+WORKDIR /app
+
+# Copy built files
+COPY --from=builder /app/dist ./dist
+COPY --from=builder /app/node_modules ./node_modules
+
+# Copy frontend files
+COPY index.html ./public/
+COPY assets ./public/assets/
+COPY favicon.svg ./public/
+COPY .nojekyll ./public/
 
 EXPOSE 3000
 
